@@ -24,8 +24,15 @@ RUN apt-get update && \
 # Copy entry script into image container folder
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+# Create empty config folder and file
+RUN mkdir -p /etc/gitlab-runner \ 
+&& chmod 0700 /etc/gitlab-runner
+RUN touch /etc/gitlab-runner/config.toml \
+&& chmod 0600 /etc/gitlab-runner/config.toml
+
 # Set mount data directory for gitlab-runner
 VOLUME ["/etc/gitlab-runner", "/home/gitlab-runner"]
 
-ENTRYPOINT ["/entrypoint.sh"]
 CMD ["run", "--user=gitlab-runner", "--working-directory=/home/gitlab-runner"]
+ENTRYPOINT ["/entrypoint.sh"]
