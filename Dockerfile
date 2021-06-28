@@ -1,6 +1,10 @@
 FROM ubuntu:18.04
 MAINTAINER veeking "veekingsen@163.com"
 
+# ENV DEBIAN_FRONTEND=noninteractive
+# Disable skel: https://docs.gitlab.com/runner/install/linux-repository.html#disable-skel
+ENV GITLAB_RUNNER_DISABLE_SKEL=false
+
 ARG NODE_VERSION=16
 ARG NODE_URL=https://deb.nodesource.com/setup_${NODE_VERSION}.x
 ARG GITLAB_RUNNER_URL=https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-linux-amd64
@@ -37,10 +41,18 @@ RUN chmod +x /entrypoint.sh
 # RUN touch /etc/gitlab-runner/config.toml \
 # && chmod 0600 /etc/gitlab-runner/config.toml
 
+# Configure user of gitlab-runner permissions and init start gitlab-runner 
+RUN useradd --system --shell /bin/bash --comment 'GitLab Runner' --create-home gitlab-runner \
+&& gitlab-runner install --user=gitlab-runner --working-directory=/home/gitlab-runner \
+&& gitlab-runner start \
+&& chown -R gitlab-runner:gitlab-runner /home/gitlab-runner
+
+# Set mount data directory for gitlab-runner
+# VOLUME ["/etc/gitlab-runner", "/home/gitlab-runner"]
+# RUN chmod 0700 /etc/gitlab-runner
 # Exit process processing before starting
 STOPSIGNAL SIGQUIT
 # Set mount data directory for gitlab-runner
 VOLUME ["/etc/gitlab-runner", "/home/gitlab-runner"]
-
 CMD ["run", "--user=gitlab-runner", "--working-directory=/home/gitlab-runner"]
 ENTRYPOINT ["/usr/bin/dumb-init", "/entrypoint.sh"]
